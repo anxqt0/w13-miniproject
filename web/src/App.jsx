@@ -54,7 +54,7 @@ export default function App() {
 
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1>Clinic ของแอน — จองนัดออนไลน์</h1>
+      <h1>Bangkok Hospital — Clinic Appointments</h1>
       <p style={{ color: '#666' }}>225381 · W13 starter</p>
 
       {loading && <p>Loading…</p>}
