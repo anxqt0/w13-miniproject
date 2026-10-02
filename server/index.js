@@ -53,17 +53,43 @@ app.post('/appointments', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+
+app.delete('/appointments/:id', async (req, res, next) => {
+  const idStr = req.params.id;
+  const id = Number(idStr);
+  if (!/^\d+$/.test(idStr) || !Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'invalid_id' });
+  }
+  try {
+    const pool = await getSqlPool();
+    const r = await pool.request()
+      .input('id', sql.Int, id)
+      .query('DELETE FROM appointments WHERE id = @id');
+    if (r.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'appointment_not_found' });
+    }
+    res.json({ ok: true, deleted: id });
+  } catch (e) { next(e); }
+});
+
 app.use((err, _req, res, _next) => {
-  if (err.code === 'NO_DB_CONFIG') {
+  if (err.code === 'NO_DB_CONFIG' || err.code === 'INVALID_DB_CONFIG') {
     return res.status(503).json({
       error: 'database_not_configured',
-      hint: 'Set AZURE_SQL_CONNECTION_STRING environment variable'
+      hint: 'Set AZURE_SQL_CONNECTION_STRING in server/.env to the full Azure SQL ADO.NET connection string, including Server=tcp:<server>.database.windows.net,1433 and Initial Catalog=<database>'
     });
   }
   console.error('unhandled', err);
   res.status(500).json({ error: 'internal_error', message: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`clinic-api listening on :${PORT}`);
-});
+import url from 'node:url';
+
+if (process.argv[1] && url.fileURLToPath(import.meta.url) === process.argv[1]) {
+  app.listen(PORT, () => {
+    console.log(`clinic-api listening on :${PORT}`);
+  });
+}
+
+export { app };
+export default app;

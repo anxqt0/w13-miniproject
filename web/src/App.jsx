@@ -9,6 +9,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ doctor_id: '', patient_name: '', slot: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
 
   async function load() {
     try {
@@ -49,6 +50,21 @@ export default function App() {
       setError(e.error || 'failed_to_book');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onCancel(id) {
+    if (!confirm('ยกเลิกนัดนี้จริงไหม?')) return;
+    setCancellingId(id);
+    setError(null);
+    try {
+      const r = await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' });
+      if (!r.ok) throw await r.json().catch(() => ({ error: 'http_error' }));
+      await load();
+    } catch (e) {
+      setError(e.error || 'failed_to_cancel');
+    } finally {
+      setCancellingId(null);
     }
   }
 
@@ -123,6 +139,16 @@ export default function App() {
                     <td style={{ padding: '0.25rem' }}>{new Date(a.slot).toLocaleString()}</td>
                     <td style={{ padding: '0.25rem' }}>{a.patient_name}</td>
                     <td style={{ padding: '0.25rem' }}>{a.doctor_name} <em>({a.specialty})</em></td>
+                    <td style={{ padding: '0.25rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => onCancel(a.id)}
+                        disabled={cancellingId === a.id}
+                        style={{ color: '#c00' }}
+                      >
+                        {cancellingId === a.id ? 'canceling…' : 'cancel'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
